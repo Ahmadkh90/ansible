@@ -17,7 +17,7 @@ jobs:
       - run:
           name: Deploy the image using ssh
           command: |
-            ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/aws ubuntu@ec2-54-200-62-165.us-west-2.compute.amazonaws.com " aws ecr get-login-password --region us-west-2 | sudo docker login --username AWS --password-stdin 618552392835.dkr.ecr.us-west-2.amazonaws.com
+            ssh -o StrictHostKeyChecking=no -i $HOME/.ssh -i "key.pem" ubuntu@ec2-52-37-125-134.us-west-2.compute.amazonaws.com " aws ecr get-login-password --region us-west-2 | sudo docker login --username AWS --password-stdin 618552392835.dkr.ecr.us-west-2.amazonaws.com
             sudo docker run -d -p 3000:3000 --name nodeapp 618552392835.dkr.ecr.us-west-2.amazonaws.com/project:lts"
       - run:
           name: Run Ansible playbook
