@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  aws-ecr: circleci/aws-ecr@8.2.1
+  aws-ecr: circleci/aws-ecr@9.1.0
 jobs:
   test:
     docker:
@@ -18,7 +18,7 @@ jobs:
           name: Deploy the image using ssh
           command: |
             ssh -o StrictHostKeyChecking=no -i $HOME/.ssh -i "key.pem" ubuntu@ec2-52-37-125-134.us-west-2.compute.amazonaws.com " aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/i7p7l8h6
-            sudo docker run -d -p 3000:3000 --name nodeapp 618552392835.dkr.ecr.us-west-2.amazonaws.com/project:lts"
+            sudo docker run -d -p 3000:3000 --name nodeapp public.ecr.aws/i7p7l8h6/project:lts"
       - run:
           name: Run Ansible playbook
           command: ansible-playbook deploy.yml
@@ -28,14 +28,13 @@ workflows:
     jobs:
       - test:
           context: Dockerhub
-      - aws-ecr/build-and-push-image:
+      - aws-ecr/public-build-and-push-image:
           repo: project
           tag: lts
           dockerfile: Dockerfile
           path: .
-          registry-id: AWS_ECR_REGISTRY_ID
           requires:
             - test
       - deploy:
           requires:
-            - aws-ecr/build-and-push-image 
+            - aws-ecr/public-build-and-push-image
