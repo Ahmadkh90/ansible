@@ -16,10 +16,10 @@ jobs:
     executor: aws-ecr/default-executor
     steps:
       - checkout
-      - aws-ecr/configure-dockerhub:
-          username: AWS_ECR_USERNAME
-          password: AWS_ECR_PASSWORD
-          email: AWS_ECR_EMAIL
+      - run:
+          name: Configure Docker credentials
+          command: |
+            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
       - aws-ecr/build-and-push-image:
           repo: ansible
           tag: lts
