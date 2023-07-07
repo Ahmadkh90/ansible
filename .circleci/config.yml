@@ -27,6 +27,7 @@ jobs:
       - run:
           name: Run Ansible playbook
           command: ansible-playbook servers.yml
+            -e "state=present containers=<count>"
 
 workflows:
   version: 2
