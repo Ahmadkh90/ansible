@@ -16,13 +16,15 @@ jobs:
     docker:
       - image: docker:stable
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - "your-ssh-key-fingerprint"
+      - attach_workspace:
+          at: .
+      - run:
+          name: Copy SSH key to agent
+          command: cp $HOME/ssh/key.pem ~/.ssh/key.pem && chmod 600 ~/.ssh/key.pem
       - run:
           name: Deploy the image using SSH
           command: |
-            ssh -o StrictHostKeyChecking=no -i $HOME/ssh/key.pem ubuntu@ec2-35-92-0-139.us-west-2.compute.amazonaws.com "eval \$(aws ecr get-login --no-include-email --region us-west-2) && docker pull 618552392835.dkr.ecr.us-west-2.amazonaws.com/ansible:lts && docker run -d -p 3000:3000 --name nodeapp 618552392835.dkr.ecr.us-west-2.amazonaws.com/ansible:lts"
+            ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ubuntu@ec2-35-92-0-139.us-west-2.compute.amazonaws.com "eval \$(aws ecr get-login --no-include-email --region us-west-2) && docker pull 618552392835.dkr.ecr.us-west-2.amazonaws.com/ansible:lts && docker run -d -p 3000:3000 --name nodeapp 618552392835.dkr.ecr.us-west-2.amazonaws.com/ansible:lts"
       - run:
           name: Run Ansible playbook
           command: ansible-playbook servers.yml -e "state=present containers=<count>"
