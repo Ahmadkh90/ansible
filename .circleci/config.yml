@@ -16,11 +16,12 @@ jobs:
     docker:
       - image: docker:stable
     steps:
-      - attach_workspace:
-          at: .
+      - add_ssh_keys:
+          fingerprints:
+            - "your-ssh-key-fingerprint"
       - run:
           name: Copy SSH key to agent
-          command: cp $HOME/ssh/key.pem ~/.ssh/key.pem && chmod 600 ~/.ssh/key.pem
+          command: cp $HOME/.ssh/key.pem ~/.ssh/key.pem && chmod 600 ~/.ssh/key.pem
       - run:
           name: Deploy the image using SSH
           command: |
