@@ -1,4 +1,4 @@
-\version: 2.1
+version: 2.1
 orbs:
   aws-ecr: circleci/aws-ecr@8.2.1
 
@@ -11,6 +11,21 @@ jobs:
       - setup_remote_docker:
           version: 20.10.14
           docker_layer_caching: true
+
+  build-and-push:
+    executor: aws-ecr/default-executor
+    steps:
+      - checkout
+      - aws-ecr/configure-dockerhub:
+          username: AWS_ECR_USERNAME
+          password: AWS_ECR_PASSWORD
+          email: AWS_ECR_EMAIL
+      - aws-ecr/build-and-push-image:
+          repo: ansible
+          tag: lts
+          dockerfile: Dockerfile
+          path: .
+          registry-id: AWS_ECR_REGISTRY_ID
 
   deploy:
     docker:
@@ -26,22 +41,16 @@ jobs:
             sudo docker run -d -p 3000:3000 --name nodeapp 618552392835.dkr.ecr.us-west-2.amazonaws.com/ansible:lts"
       - run:
           name: Run Ansible playbook
-          command: ansible-playbook servers.yml -e "state=present containers=2"
+          command: ansible-playbook servers.yml -e "state=present containers=<count>"
 
 workflows:
   version: 2
-  build:
+  build-deploy:
     jobs:
-      - test:
-          context: Dockerhub
-      - aws-ecr/build-and-push-image:
-          repo: ansible
-          tag: lts
-          dockerfile: Dockerfile
-          path: .
-          registry-id: AWS_ECR_REGISTRY_ID
+      - test
+      - build-and-push:
           requires:
             - test
       - deploy:
           requires:
-            - aws-ecr/build-and-push-image
+            - build-and-push
