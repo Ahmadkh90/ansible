@@ -1,4 +1,4 @@
-version: 2.1
+\version: 2.1
 orbs:
   aws-ecr: circleci/aws-ecr@8.2.1
 
@@ -18,16 +18,15 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "ssh-add -l"
+            - "your-ssh-key-fingerprint"
       - run:
           name: Deploy the image using SSH
           command: |
-            ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/key.pem ubuntu@ec2-35-89-183-122.us-west-2.compute.amazonaws.com "aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 618552392835.dkr.ecr.us-west-2.amazonaws.com
+            ssh -o StrictHostKeyChecking=no -i $HOME/ssh/key.pem ubuntu@ec2-35-92-0-139.us-west-2.compute.amazonaws.com "aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 618552392835.dkr.ecr.us-west-2.amazonaws.com
             sudo docker run -d -p 3000:3000 --name nodeapp 618552392835.dkr.ecr.us-west-2.amazonaws.com/ansible:lts"
       - run:
           name: Run Ansible playbook
-          command: ansible-playbook servers.yml
-            -e "state=present containers=<count>"
+          command: ansible-playbook servers.yml -e "state=present containers=2"
 
 workflows:
   version: 2
