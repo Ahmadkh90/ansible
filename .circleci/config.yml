@@ -18,7 +18,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "your-ssh-key-fingerprint"
+            - "ssh-add -l"
       - run:
           name: Deploy the image using SSH
           command: |
