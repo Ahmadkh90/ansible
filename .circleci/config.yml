@@ -21,7 +21,7 @@ jobs:
             - "your-ssh-key-fingerprint"
       - run:
           name: Copy SSH key to agent
-          command: cp $HOME/.ssh/key.pem ~/.ssh/key.pem && chmod 600 ~/.ssh/key.pem
+          command: cp /root/.ssh/key.pem ~/.ssh/key.pem && chmod 600 ~/.ssh/key.pem
       - run:
           name: Deploy the image using SSH
           command: |
