@@ -12,21 +12,6 @@ jobs:
           version: 20.10.14
           docker_layer_caching: true
 
-  build-and-push:
-    executor: aws-ecr/default-executor
-    steps:
-      - checkout
-      - run:
-          name: Configure Docker credentials
-          command: |
-            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-      - aws-ecr/build-and-push-image:
-          repo: ansible
-          tag: lts
-          dockerfile: Dockerfile
-          path: .
-          registry-id: AWS_ECR_REGISTRY_ID
-
   deploy:
     docker:
       - image: docker:stable
@@ -45,12 +30,18 @@ jobs:
 
 workflows:
   version: 2
-  build-deploy:
+  build:
     jobs:
-      - test
-      - build-and-push:
+      - test:
+          context: Dockerhub
+      - aws-ecr/build-and-push-image:
+          repo: ansible
+          tag: lts
+          dockerfile: Dockerfile
+          path: .
+          registry-id: AWS_ECR_REGISTRY_ID
           requires:
             - test
       - deploy:
           requires:
-            - build-and-push
+            - aws-ecr/build-and-push-image
