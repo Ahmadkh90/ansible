@@ -1,45 +1,41 @@
-version: 2
+version: 2.1
+
 orbs:
   ansible: circleci/ansible@0.1.6
 
 jobs:
   deploy-job:
+    executor: ansible/default
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - "c3:37:69:80:da:ac:ac:bf:b1:55:29:37:ca:c8:18:68"
-  test:
-    docker:
-      - image: docker:stable
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.7
+      - run:
+          name: Install Ansible
+          command: sudo apt-get update && sudo apt-get install -y ansible
+      - run:
+          name: Run Ansible playbook
+          command: ansible-playbook -i inventory.yml --private-key=$HOME/.ssh/aws servers.yml
 
   build:
     docker:
       - image: circleci/node
     steps:
       - checkout
-      - setup_remote_docker
-      - run:
-          name: Install Ansible
-          command: |
-            sudo apt-get update && sudo apt-get install -y ansible
-      - run:
-          name: Run Ansible playbook
-          command: ansible-playbook -i inventory.yml --private-key=$HOME/.ssh/aws servers.yml
       - run:
           name: Build and push Docker image
           command: |
-            sudo docker build -t nodeapp .
-            sudo docker tag nodeapp $username/nodeapp:$CIRCLE_BUILD_NUM
-            sudo docker login -u $username -p $password
-            sudo docker push $username/nodeapp:$CIRCLE_BUILD_NUM
+            docker build -t nodeapp .
+            docker tag nodeapp $username/nodeapp:$CIRCLE_BUILD_NUM
+            docker login -u $username -p $password
+            docker push $username/nodeapp:$CIRCLE_BUILD_NUM
             ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/aws ubuntu@ec2-35-88-72-141.us-west-2.compute.amazonaws.com "
-            sudo docker run -d -p 3000:3000 --name test $username/nodeapp:$CIRCLE_BUILD_NUM"
+            docker run -d -p 3000:3000 --name test $username/nodeapp:$CIRCLE_BUILD_NUM"
 
 workflows:
-  version: 2
   build-deploy:
     jobs:
-      - test
+      - deploy-job
       - build:
           requires:
-            - test
+            - deploy-job
