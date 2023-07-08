@@ -1,13 +1,8 @@
-version: 2
+version: 2.1
 orbs:
   ansible: circleci/ansible@0.1.6
 
 jobs:
-  deploy-job:
-    steps:
-      - add_ssh_keys:
-          fingerprints:
-            - "9d:25:8d:0a:23:c7:18:61:8a:1c:b5:e3:60:04:6d:87"
   test:
     docker:
       - image: docker:stable
@@ -17,22 +12,23 @@ jobs:
       - image: circleci/node
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 20.10.14
+          docker_layer_caching: true
       - run:
           name: Install Ansible
           command: |
             sudo apt-get update && sudo apt-get install -y ansible
       - run:
           name: Run Ansible playbook
-          command: ansible-playbook -i inventory.yml --private-key=$HOME/.ssh/aws servers.yml
+          command: ansible-playbook -i inventory.yml servers.yml
       - run:
           name: Build and push Docker image
           command: |
-            ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/aws ubuntu@ec2-54-84-143-137.compute-1.amazonaws.com "
             docker build -t nodeapp .
             docker tag nodeapp $DOCKER_LOGIN/nodeapp:$CIRCLE_BUILD_NUM
             docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
-            docker push $DOCKER_LOGIN/nodeapp:$CIRCLE_BUILD_NUM"
+            docker push $DOCKER_LOGIN/nodeapp:$CIRCLE_BUILD_NUM
 
 workflows:
   version: 2
