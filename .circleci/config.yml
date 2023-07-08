@@ -1,48 +1,47 @@
-version: 2.1
+version: 2
 orbs:
-  aws-ecr: circleci/aws-ecr@8.2.1
+  ansible: circleci/ansible@0.1.6
 
 jobs:
-  test:
-    docker:
-      - image: docker:stable
-    steps:
-      - checkout
-      - setup_remote_docker:
-          version: 20.10.14
-          docker_layer_caching: true
-
-  deploy:
-    docker:
-      - image: docker:stable
+  deploy-job:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "your-ssh-key-fingerprint"
+            - "9d:25:8d:0a:23:c7:18:61:8a:1c:b5:e3:60:04:6d:87"
+  test:
+    docker:
+      - image: docker:stable
+
+  build:
+    docker:
+      - image: circleci/node
+    steps:
+      - checkout
+      - setup_remote_docker
       - run:
-          name: Copy SSH key to agent
-          command: cp /root/.ssh/key.pem ~/.ssh/key.pem && chmod 600 ~/.ssh/key.pem
-      - run:
-          name: Deploy the image using SSH
+          name: Install Ansible
           command: |
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ubuntu@ec2-35-92-0-139.us-west-2.compute.amazonaws.com "eval \$(aws ecr get-login --no-include-email --region us-west-2) && docker pull 618552392835.dkr.ecr.us-west-2.amazonaws.com/ansible:lts && docker run -d -p 3000:3000 --name nodeapp 618552392835.dkr.ecr.us-west-2.amazonaws.com/ansible:lts"
+            sudo apt-get update && sudo apt-get install -y ansible
+      - run:
+          name: Ping Machine
+          command: ansible all -m ping -i inventory.yml -y
       - run:
           name: Run Ansible playbook
-          command: ansible-playbook servers.yml -e "state=present containers=<count>"
+          command: ansible-playbook -i inventory.yml --private-key=$HOME/.ssh/aws servers.yml
+      - run:
+          name: Build and push Docker image
+          command: |
+            ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/aws ubuntu@ec2-54-84-143-137.compute-1.amazonaws.com "
+            docker build -t nodeapp .
+            docker tag nodeapp $DOCKER_LOGIN/nodeapp:$CIRCLE_BUILD_NUM
+            docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
+            docker push $DOCKER_LOGIN/nodeapp:$CIRCLE_BUILD_NUM"
 
 workflows:
   version: 2
   build-deploy:
     jobs:
       - test
-      - aws-ecr/build-and-push-image:
-          repo: ansible
-          tag: lts
-          dockerfile: Dockerfile
-          path: .
-          registry-id: AWS_ECR_REGISTRY_ID
+      - build:
           requires:
             - test
-      - deploy:
-          requires:
-            - aws-ecr/build-and-push-image
