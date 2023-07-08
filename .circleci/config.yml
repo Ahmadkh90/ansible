@@ -7,7 +7,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "9d:25:8d:0a:23:c7:18:61:8a:1c:b5:e3:60:04:6d:87"
+            - "c3:37:69:80:da:ac:ac:bf:b1:55:29:37:ca:c8:18:68"
   test:
     docker:
       - image: docker:stable
