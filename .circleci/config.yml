@@ -6,6 +6,8 @@ jobs:
   test:
     docker:
       - image: docker:stable
+    steps:
+      - checkout
 
   build:
     docker:
