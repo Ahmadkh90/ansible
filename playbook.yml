@@ -1,16 +1,32 @@
 ---
-  - hosts: servers
-    become: true
-    tasks:
-      - name: Add Docker GPG apt Key
-        apt_key:
-          url: https://download.docker.com/linux/ubuntu/gpg
-          state: present
- 
-      - name: Add Docker Repository
-        apt_repository:
-          repo: deb https://download.docker.com/linux/ubuntu bionic stable
-          state: present
- 
-      - name: Update apt and install docker-ce
-        apt: update_cache=yes name=docker-ce state=latest
+- hosts: servers
+  become: true
+  tasks:
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt:
+        update_cache: yes
+        name: docker-ce
+        state: latest
+
+    - name: Pull the Docker image
+      docker_image:
+        name: "{{ lookup('env', 'username') }}/nodeapp:{{ lookup('env', 'CIRCLE_BUILD_NUM') }}"
+        source: pull
+
+    - name: Run Docker container
+      docker_container:
+        name: node-app
+        image: "{{ lookup('env', 'username') }}/nodeapp:{{ lookup('env', 'CIRCLE_BUILD_NUM') }}"
+        state: started
+        ports:
+          - "3000:3000"
